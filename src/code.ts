@@ -43,14 +43,15 @@ figma.ui.onmessage = async (msg: {
 
   for (const text of texts) {
     const clone = template.clone();
+    clone.name = toFrameName(text);
     clone.x = offsetX;
     clone.y = template.y;
     figma.currentPage.appendChild(clone);
 
-    // Set text in plugin-text node
+    // Set text in plugin-text node. ";" marks a line break.
     const textNode = findByName(clone, "plugin-text") as TextNode | null;
     if (textNode && textNode.type === "TEXT") {
-      textNode.characters = text;
+      textNode.characters = applyLineBreaks(text);
     }
 
     // Override logo if provided
@@ -70,6 +71,23 @@ figma.ui.onmessage = async (msg: {
 
   figma.ui.postMessage({ type: "done", count: texts.length });
 };
+
+function applyLineBreaks(text: string): string {
+  return text.split(";").map(part => part.trim()).filter(Boolean).join("\n");
+}
+
+function toFrameName(text: string): string {
+  let slug = "";
+  const source = text.toLowerCase();
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i];
+    const isLetter = ch.toLowerCase() !== ch.toUpperCase();
+    const isDigit = ch >= "0" && ch <= "9";
+    slug += isLetter || isDigit ? ch : "-";
+  }
+  slug = slug.replace(/-+/g, "-").replace(/^-|-$/g, "");
+  return slug || "frame";
+}
 
 function findByName(parent: ChildrenMixin, name: string): SceneNode | null {
   for (const child of parent.children) {

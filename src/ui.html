@@ -122,6 +122,22 @@
     .statusMessage.error   { color: #cf2222; }
 
     .hint { font-size: 11px; color: #aaa; font-weight: 400; }
+
+    .generateDownwardCheckbox {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      color: #444;
+      cursor: pointer;
+    }
+    .generateDownwardCheckbox input {
+      width: 14px;
+      height: 14px;
+      accent-color: #0d99ff;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -152,6 +168,11 @@
     <input type="file" id="centerFile" accept="image/png,image/svg+xml,image/jpeg" />
   </div>
 
+  <label class="generateDownwardCheckbox">
+    <input type="checkbox" id="generateDown" />
+    Generate downward
+  </label>
+
   <button class="generateButton" id="generateBtn" onclick="generate()">Generate</button>
 
   <p class="statusMessage" id="status"></p>
@@ -178,6 +199,15 @@
       el.className = 'uploadFilename loaded';
     });
 
+    document.getElementById('generateDown').addEventListener('change', () => {
+      parent.postMessage({
+        pluginMessage: {
+          type: 'save-settings',
+          generateDown: document.getElementById('generateDown').checked,
+        }
+      }, '*');
+    });
+
     function generate() {
       const rawTexts = document.getElementById('textsInput').value;
       const texts = rawTexts.split('\n').map(t => t.trim()).filter(Boolean);
@@ -198,6 +228,7 @@
           texts,
           logoBytes: logoBytes || undefined,
           centerBytes: centerBytes || undefined,
+          generateDown: document.getElementById('generateDown').checked,
         }
       }, '*');
     }
@@ -205,6 +236,11 @@
     window.onmessage = (event) => {
       const msg = event.data.pluginMessage;
       if (!msg) return;
+
+      if (msg.type === 'settings') {
+        document.getElementById('generateDown').checked = !!msg.generateDown;
+        return;
+      }
 
       const btn = document.getElementById('generateBtn');
       btn.disabled = false;

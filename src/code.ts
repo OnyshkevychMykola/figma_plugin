@@ -1,13 +1,24 @@
 /// <reference path="../node_modules/@figma/plugin-typings/index.d.ts" />
 
-figma.showUI(__html__, { width: 400, height: 480 });
+figma.showUI(__html__, { width: 400, height: 520 });
+
+(async () => {
+  const generateDown = await figma.clientStorage.getAsync("generateDown");
+  figma.ui.postMessage({ type: "settings", generateDown: !!generateDown });
+})();
 
 figma.ui.onmessage = async (msg: {
   type: string;
-  texts: string[];
+  texts?: string[];
   logoBytes?: Uint8Array;
   centerBytes?: Uint8Array;
+  generateDown?: boolean;
 }) => {
+  if (msg.type === "save-settings") {
+    await figma.clientStorage.setAsync("generateDown", !!msg.generateDown);
+    return;
+  }
+
   if (msg.type !== "generate") return;
 
   const selection = figma.currentPage.selection;
@@ -17,7 +28,9 @@ figma.ui.onmessage = async (msg: {
   }
 
   const template = selection[0] as FrameNode;
-  const texts = msg.texts.filter(t => t.trim() !== "");
+  const texts = (msg.texts || []).filter(t => t.trim() !== "");
+  const generateDown = !!msg.generateDown;
+  await figma.clientStorage.setAsync("generateDown", generateDown);
 
   if (texts.length === 0) {
     figma.ui.postMessage({ type: "error", message: "Add at least one text." });
@@ -38,14 +51,15 @@ figma.ui.onmessage = async (msg: {
     await figma.loadFontAsync({ family, style });
   }
 
-  const GAP = 40;
-  let offsetX = template.x + template.width + GAP;
+  const GAP = 50;
+  let offsetX = generateDown ? template.x : template.x + template.width + GAP;
+  let offsetY = generateDown ? template.y + template.height + GAP : template.y;
 
   for (const text of texts) {
     const clone = template.clone();
     clone.name = toFrameName(text);
     clone.x = offsetX;
-    clone.y = template.y;
+    clone.y = offsetY;
     figma.currentPage.appendChild(clone);
 
     // Set text in plugin-text node. ";" marks a line break.
@@ -66,7 +80,11 @@ figma.ui.onmessage = async (msg: {
       if (centerNode) setImageFill(centerNode, msg.centerBytes);
     }
 
-    offsetX += clone.width + GAP;
+    if (generateDown) {
+      offsetY += clone.height + GAP;
+    } else {
+      offsetX += clone.width + GAP;
+    }
   }
 
   figma.ui.postMessage({ type: "done", count: texts.length });

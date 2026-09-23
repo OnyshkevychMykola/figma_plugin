@@ -16,11 +16,7 @@
       gap: 14px;
     }
 
-    h2 {
-      font-size: 15px;
-      font-weight: 600;
-      color: #111;
-    }
+    h2 { font-size: 15px; font-weight: 600; color: #111; }
 
     label {
       display: flex;
@@ -30,9 +26,15 @@
       color: #444;
     }
 
+    .labelRow {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     textarea {
       width: 100%;
-      height: 140px;
+      height: 160px;
       padding: 8px 10px;
       border: 1px solid #ddd;
       border-radius: 6px;
@@ -44,14 +46,37 @@
     }
     textarea:focus { border-color: #0d99ff; }
 
-    .upload-row {
+    .optionalSection {
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .optionalTitle {
+      font-size: 11px;
+      font-weight: 600;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .uploadRow {
       display: flex;
       align-items: center;
       gap: 10px;
     }
 
+    .uploadLabel {
+      font-weight: 500;
+      color: #555;
+      min-width: 90px;
+    }
+
     .uploadButton {
-      padding: 6px 12px;
+      padding: 5px 10px;
       border: 1px solid #ddd;
       border-radius: 6px;
       background: #f5f5f5;
@@ -63,12 +88,13 @@
     .uploadButton:hover { background: #eaeaea; }
 
     .uploadFilename {
-      font-size: 12px;
-      color: #888;
+      font-size: 11px;
+      color: #aaa;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .uploadFilename.loaded { color: #1a7f37; }
 
     input[type="file"] { display: none; }
 
@@ -95,37 +121,36 @@
     .statusMessage.success { color: #1a7f37; }
     .statusMessage.error   { color: #cf2222; }
 
-    .hint {
-      font-size: 11px;
-      color: #aaa;
-    }
+    .hint { font-size: 11px; color: #aaa; font-weight: 400; }
   </style>
 </head>
 <body>
   <h2>Template Generator</h2>
 
   <label>
-    Texts <span class="hint">(one per line)</span>
-    <textarea id="textsInput" placeholder="First text&#10;Second text&#10;Third text"></textarea>
+    <div class="labelRow">
+      Texts <span class="hint">— one per line</span>
+    </div>
+    <textarea id="textsInput" placeholder="What Is Paysafecard&#10;Is Gambling Legal in NZ?&#10;How to Choose a Casino"></textarea>
   </label>
 
-  <label>
-    Logo <span class="hint">(PNG / SVG)</span>
-    <div class="upload-row">
+  <div class="optionalSection">
+    <span class="optionalTitle">Optional overrides</span>
+
+    <div class="uploadRow">
+      <span class="uploadLabel">Logo</span>
       <button class="uploadButton" onclick="document.getElementById('logoFile').click()">Choose file</button>
-      <span class="uploadFilename" id="logoName">No file chosen</span>
+      <span class="uploadFilename" id="logoName">uses template</span>
     </div>
     <input type="file" id="logoFile" accept="image/png,image/svg+xml,image/jpeg" />
-  </label>
 
-  <label>
-    Center image <span class="hint">(optional)</span>
-    <div class="upload-row">
+    <div class="uploadRow">
+      <span class="uploadLabel">Center image</span>
       <button class="uploadButton" onclick="document.getElementById('centerFile').click()">Choose file</button>
-      <span class="uploadFilename" id="centerName">No file chosen</span>
+      <span class="uploadFilename" id="centerName">uses template</span>
     </div>
     <input type="file" id="centerFile" accept="image/png,image/svg+xml,image/jpeg" />
-  </label>
+  </div>
 
   <button class="generateButton" id="generateBtn" onclick="generate()">Generate</button>
 
@@ -139,14 +164,18 @@
       const file = e.target.files[0];
       if (!file) return;
       logoBytes = new Uint8Array(await file.arrayBuffer());
-      document.getElementById('logoName').textContent = file.name;
+      const el = document.getElementById('logoName');
+      el.textContent = file.name;
+      el.className = 'uploadFilename loaded';
     });
 
     document.getElementById('centerFile').addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
       centerBytes = new Uint8Array(await file.arrayBuffer());
-      document.getElementById('centerName').textContent = file.name;
+      const el = document.getElementById('centerName');
+      el.textContent = file.name;
+      el.className = 'uploadFilename loaded';
     });
 
     function generate() {

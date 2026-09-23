@@ -12,7 +12,7 @@ figma.ui.onmessage = async (msg: {
 
   const selection = figma.currentPage.selection;
   if (selection.length !== 1 || selection[0].type !== "FRAME") {
-    figma.ui.postMessage({ type: "error", message: 'Select a single frame as template.' });
+    figma.ui.postMessage({ type: "error", message: "Select a single frame as template." });
     return;
   }
 
@@ -20,12 +20,23 @@ figma.ui.onmessage = async (msg: {
   const texts = msg.texts.filter(t => t.trim() !== "");
 
   if (texts.length === 0) {
-    figma.ui.postMessage({ type: "error", message: 'Add at least one text.' });
+    figma.ui.postMessage({ type: "error", message: "Add at least one text." });
     return;
   }
 
-  await figma.loadFontAsync({ family: "Inter", style: "Regular" });
-  await figma.loadFontAsync({ family: "Inter", style: "Bold" });
+  // Pre-load all fonts used in the template's text nodes
+  const textNodes = template.findAll(n => n.type === "TEXT") as TextNode[];
+  const fontNames = new Set<string>();
+  for (const t of textNodes) {
+    if (t.fontName !== figma.mixed) {
+      const fn = t.fontName as FontName;
+      fontNames.add(`${fn.family}::${fn.style}`);
+    }
+  }
+  for (const key of fontNames) {
+    const [family, style] = key.split("::");
+    await figma.loadFontAsync({ family, style });
+  }
 
   const GAP = 40;
   let offsetX = template.x + template.width + GAP;
@@ -36,19 +47,19 @@ figma.ui.onmessage = async (msg: {
     clone.y = template.y;
     figma.currentPage.appendChild(clone);
 
-    // Set text
-    const textNode = findByName(clone, "plugin-text");
+    // Set text in plugin-text node
+    const textNode = findByName(clone, "plugin-text") as TextNode | null;
     if (textNode && textNode.type === "TEXT") {
       textNode.characters = text;
     }
 
-    // Set logo
+    // Override logo if provided
     if (msg.logoBytes) {
       const logoNode = findByName(clone, "plugin-logo");
       if (logoNode) setImageFill(logoNode, msg.logoBytes);
     }
 
-    // Set center image (optional)
+    // Override center image if provided
     if (msg.centerBytes) {
       const centerNode = findByName(clone, "plugin-center");
       if (centerNode) setImageFill(centerNode, msg.centerBytes);

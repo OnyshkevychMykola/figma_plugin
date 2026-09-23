@@ -1,0 +1,12 @@
+{
+  "name": "figma-template-plugin",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "npx tsc --noEmit false",
+    "watch": "npx tsc --watch"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.90.0",
+    "typescript": "^5.4.0"
+  }
+}
